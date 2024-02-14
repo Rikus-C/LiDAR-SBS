@@ -44,3 +44,38 @@ def read_data_from_frames(raw_frames):
             position_sum += float.fromhex(raw_frames[r][c])
         raw_data.append((position_sum/frame_count)/1000)
     return raw_data[end_point:len(raw_data) - end_point]
+
+def CalibrateA():
+    for C1 in range(dsp["calibration length"]):
+        
+        frames = lidarA_tcp.make_multiple_requests(
+        msgs["poll telegram"], dsp["frames to average"])
+
+        # Proccess data
+
+
+        raw_data = read_data_from_frames(frames)
+        raw_data = raw_data[45:]
+        raw_data = raw_data[:-45]
+
+        data = _dsp.exponential_moving_average(raw_data, dsp["exponential filter strength"])
+        data = _dsp.moving_average(data)
+
+        li_DistanceIndex = GetClosest(data)
+        garr_ClibrationIndexA.append(li_DistanceIndex)
+
+def CalibrateB():
+    for C1 in range(dsp["calibration length"]):
+        
+        frames = lidarB_tcp.make_multiple_requests(
+        msgs["poll telegram"], dsp["frames to average"])
+
+        # Proccess data
+        raw_data = read_data_from_frames(frames)
+        raw_data = raw_data[45:]
+        raw_data = raw_data[:-45]
+        data = _dsp.exponential_moving_average(raw_data, dsp["exponential filter strength"])
+        data = _dsp.moving_average(data)
+
+        li_DistanceIndex = GetClosest(data)
+        garr_ClibrationIndexB.append(li_DistanceIndex)

@@ -67,3 +67,16 @@ class Debugger:
         for x in range(-width/2, width/2 + 1):
             slide.append(x*a + offset)
         return slide
+
+    def SaveArrayToCSV(data, FileName):
+        with open(FileName, mode='a', newline='') as csv_file:
+            csv_writer = csv.writer(csv_file)
+            csv_writer.writerow(data)
+
+    def LoadArrayFromCSV(FileName):
+        global garr_LoadedData
+
+        with open(FileName, mode='r', newline='') as csv_file:
+            csv_reader = csv.reader(csv_file)
+            for row in csv_reader:
+                garr_LoadedData.append(row)

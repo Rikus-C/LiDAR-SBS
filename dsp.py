@@ -89,3 +89,116 @@ class DSP:
             larr_NewSignal.append(li_RuningValue)
 
         return larr_NewSignal
+
+    def calculate_errors(LAD, LBD, LAA, LBA):
+        # Calculate x error:
+        LAA = LAA *3.14/180
+        LBA = LBA *3.14/180 
+
+        xA = math.cos(abs(LAA))*LAD
+        xB = math.cos(abs(LBA))*LBD
+        xDistance = (xB + xA)/2
+        xError = xDistance - xB
+
+        # Calculate y error:
+        yA = -math.sin(LAA)*LAD
+        yB = math.sin(LBA)*LBD
+        yDistance = abs(yA - yB)/2
+
+        if (yA <= 0 and yB <= 0):
+            yError = -(yDistance + abs(max([yA, yB])))
+            print("Type 1")
+
+        elif (yA >= 0 and yB >= 0):
+            yError = (yDistance + abs(min([yA, yB])))
+            print("Type 2")
+
+        elif (LAA > LBA and yA > yB):
+            yError = yDistance - abs(min([yA, yB]))
+            print("Type 3")
+
+        elif (LAA < LBA and yA > yB):
+            yError = yDistance - abs(min([yA, yB]))
+            print("Type 4")
+
+        else : 
+            yError =(yDistance - abs(min([yA, yB])))
+            print("Type 5")
+
+        # Calculate roll error:
+        aError = math.atan(((yA - yB)/2)/xDistance)*(360/(2*math.pi))
+
+        # Outputs:
+        #print(xDistance)
+        #print(yDistance)
+
+        print("X-Error:     ", xError*1000)
+        print("Y-Error:     ", yError*1000)
+        print("Angle-Error: ", aError)
+
+    def GetClosest(parr_Data):
+        li_Index = -1
+        C2 = 0
+        Min = 99999
+        for C1 in parr_Data:
+            if (C1 < Min):
+                Min = C1
+                li_Index = C2
+            C2 = C2 + 1
+        return li_Index
+
+    def GetindextOfLargersDiffrence(parr_Data):
+        li_Index = 0
+        li_IndexStart = -1
+        li_IndexEnd = -1
+        lf_Diffrence = 0
+
+        for C1 in range(0,len(parr_Data)-1):
+            if (abs(parr_Data[C1] - parr_Data[C1 + 1]) > lf_Diffrence):
+                if (parr_Data[C1] > parr_Data[C1 + 1]):
+                    lf_Diffrence = abs(parr_Data[C1] - parr_Data[C1 + 1])
+                    li_Index = C1+1
+        return li_Index
+
+def GetDistance(parr_Data, pf_Cutoff = 0):
+    lf_Distance = np.inf
+    li_DistanceIndext = -1
+    li_StartIndex = -1
+    li_EndIndex = -1
+
+    li_WindowSize = dsp["detection windowsize"]
+
+    lf_LargestError = 0
+    for C1 in range(li_WindowSize,len(parr_Data)):
+        li_X1 = C1 - li_WindowSize
+        li_X2 = C1
+        lf_Y1 = parr_Data[li_X1]
+        lf_Y2 = parr_Data[li_X2]
+        larr_Errors = []
+
+        lf_Gradient = (lf_Y2 - lf_Y1)/(li_X2 - li_X1)
+        lf_Offset = ((lf_Y1 - lf_Gradient*li_X1) + (lf_Y2 - lf_Gradient*li_X2))/2
+
+        larr_YPredicted = list(map(lambda x: x*lf_Gradient + lf_Offset, list(range(li_X1,li_X2))))
+
+        lf_Error = mse(parr_Data[li_X1:li_X2],larr_YPredicted)
+        larr_Errors.append(lf_Error)
+
+        if (lf_Error > lf_LargestError):
+            lf_StandardError = np.array(list(map(lambda x,y: x - y, larr_YPredicted, parr_Data[li_X1:li_X2]))).mean()
+            if (lf_StandardError > 0):
+                li_StartIndex = li_X1
+                li_EndIndex = li_X2
+                lf_LargestError = lf_Error
+                    
+    lf_Distance = parr_Data[li_StartIndex]
+    li_DistanceIndext = li_StartIndex
+
+    for C1 in range(li_StartIndex,li_EndIndex):
+        if (lf_Distance > parr_Data[C1]):
+            lf_Distance = parr_Data[C1]
+            li_DistanceIndext = C1
+
+    return li_DistanceIndext
+
+
